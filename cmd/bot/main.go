@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,11 +14,15 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const defaultConfigFile = "./config/config.json"
+
+var flagConfig = flag.String("c", defaultConfigFile, "Location of config file.")
+
 func main() {
 
-	const configFile = "./config/config.json"
+	flag.Parse()
+	cfg, err := config.ParseConfig(*flagConfig)
 
-	cfg, err := config.ParseConfig(configFile)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +34,8 @@ func main() {
 
 	s.Identify.Intents = discordgo.MakeIntent(
 		discordgo.IntentsGuildMembers |
-			discordgo.IntentGuildMessages)
+			discordgo.IntentGuildMessages |
+			discordgo.IntentGuildMessageReactions)
 
 	registerEvents(s)
 	RegisterCommands(s, cfg)
@@ -52,6 +58,7 @@ func registerEvents(s *discordgo.Session) {
 
 	s.AddHandler(events.NewReadyHandler().Handler)
 	s.AddHandler(events.NewMessageHandler().Handler)
+	s.AddHandler(events.NewReactionHandler().Handler)
 }
 
 func RegisterCommands(s *discordgo.Session, cfg *config.Config) {
@@ -61,7 +68,9 @@ func RegisterCommands(s *discordgo.Session, cfg *config.Config) {
 			fmt.Sprintf("Command Execution Failed: %s", err.Error()))
 	}
 
+	// Command List
 	cmdHandler.RegisterCommand(&commands.CmdPing{})
+	cmdHandler.RegisterCommand(&commands.CmdMapChooser{})
 	cmdHandler.RegisterMiddleware(&commandHandler.MwPermissions{})
 
 	s.AddHandler(cmdHandler.HandleMessage)
