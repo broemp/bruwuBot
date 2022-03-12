@@ -3,7 +3,6 @@ package commandHandler
 import (
 	"strings"
 
-	//"github.com/broemp/bruwuBot/internal/middlewares"
 	"github.com/bwmarrin/discordgo"
 )
 
